@@ -58,7 +58,7 @@ class meteor(pygame.sprite.Sprite):
         self.spawn_time = pygame.time.get_ticks()  # Get the current time in milliseconds
         self.lifetime = 4000  # Set the lifetime of the meteor in milliseconds (2 seconds)
         self.direction = pygame.math.Vector2(random.uniform(-0.5, 0.5), 1) # Random direction for the meteor
-        self.speed = random.randint(100, 300)  # Random speed for the meteor
+        self.speed = random.randint(200, 500)  # Random speed for the meteor
     def update(self,dt):
         self.rect.center += self.direction * self.speed * dt
         current_time = pygame.time.get_ticks()  # Get the current time in milliseconds
