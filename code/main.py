@@ -9,11 +9,13 @@ class player(pygame.sprite.Sprite):
         self.rect=self.image.get_frect(center=(window_width/2, window_height/2))
         self.player_direction = pygame.math.Vector2()
         self.player_speed =300 #player speed
+        
         ##cooldown timer
         self.can_shoot = True  # Flag to track if the player can shoot
         self.laser_shoot_time = 0  # Time when the last laser was shot
-        self.cooldown_duration = 200  # Cooldown duration 
-          
+        self.cooldown_duration = 200  # Cooldown duration
+     
+      
         
     def laser_timer(self):
         if not self.can_shoot:  # Check if the player cannot shoot
@@ -35,6 +37,7 @@ class player(pygame.sprite.Sprite):
             self.laser_shoot_time = pygame.time.get_ticks()  # Update the last shoot time
          
         self.laser_timer()  # Call the laser_timer method to handle cooldown logic
+        
 class star(pygame.sprite.Sprite):
     def __init__(self,groups, surf): 
         super().__init__(groups)  #dunder init
@@ -50,24 +53,37 @@ class laser(pygame.sprite.Sprite):
         self.rect.centery-=300*dt
         if self.rect.bottom<0:
             self.kill()  # Remove the laser sprite from all groups when it goes off-screen
+
+class AnimatededExplosion(pygame.sprite.Sprite):
+    def __init__(self, surf , pos , groups):
+        super().__init__(groups)
+        self.image=frames[0]
+        self.rect(self.image.get_frect(center=pos))
+        
 class meteor(pygame.sprite.Sprite):
     def __init__(self,surf,pos,groups):
         super().__init__(groups)
+        self.orig_image=surf
         self.image=surf
         self.rect=self.image.get_frect(center=pos)
         self.spawn_time = pygame.time.get_ticks()  # Get the current time in milliseconds
-        self.lifetime = 4000  # Set the lifetime of the meteor in milliseconds (2 seconds)
+        self.lifetime = 3000  # Set the lifetime of the meteor in milliseconds (2 seconds)
         self.direction = pygame.math.Vector2(random.uniform(-0.5, 0.5), 1) # Random direction for the meteor
-        self.speed = random.randint(200, 500)  # Random speed for the meteor
+        self.speed = random.randint(300, 800)  # Random speed for the meteor
+        self.rotation_speed = random.randint(-180, 180)  # Random rotation speed for the meteor
+        self.angle = 0  # Initial angle for rotation
     def update(self,dt):
         self.rect.center += self.direction * self.speed * dt
+        self.angle += self.rotation_speed * dt  # Update the angle based on the rotation speed and delta time
+        self.image=pygame.transform.rotozoom(self.orig_image, self.angle, 1)  # Rotate the meteor image based on the rotation speed
+        self.rect=self.image.get_frect(center=self.rect.center)
         current_time = pygame.time.get_ticks()  # Get the current time in milliseconds
         if current_time - self.spawn_time >= self.lifetime:  # Check if the meteor's lifetime has expired
             self.kill()  # Remove the meteor sprite from all groups
             
 def collisions():
     global running
-    collisions_sprites = pygame.sprite.spritecollide(player,meteor_sprites, True)  # Check for collisions between meteors and other sprites
+    collisions_sprites = pygame.sprite.spritecollide(player,meteor_sprites, True, pygame.sprite.collide_mask)  # Check for collisions between meteors and other sprites
     if collisions_sprites:
         running = False  # Stop the game if a collision occurs
           
@@ -80,7 +96,8 @@ def display_score():
     current_time = pygame.time.get_ticks()  # Get the current time in milliseconds
     text_surface = font.render(str(current_time//1000), True, 'yellow')  # Render the score text
     text_rect = text_surface.get_rect(midbottom=(window_width/2, window_height-0))  # Get the rectangle for positioning the score text
-    screen.blit(text_surface, text_rect)
+    screen.blit(text_surface, text_rect) 
+    pygame.draw.rect(screen, 'yellow', text_rect.inflate(15, 10).move(0,-10), 2)  # Draw a rectangle around the score text
 #general setup
 pygame.init()
 window_width, window_height = 1280 ,720
@@ -93,17 +110,22 @@ clock=pygame.time.Clock()
 
 #import
 star_surf=pygame.image.load(join("images", "star.png")).convert_alpha()# Load the star image
-star_surf=pygame.transform.scale(star_surf, (200, 200))  # Scale the star image to 20x20 pixels
+star_surf=pygame.transform.scale(star_surf, (200, 200))  # Scale the star image to 200x200 pixels
 meteor_surf=pygame.image.load(join("images", "meteor.png")).convert_alpha() # Load the meteor image
 laser_surf=pygame.image.load(join("images", "laser.png")).convert_alpha()
+
 font=pygame.font.Font(join("images", "Oxanium-Bold.ttf"), 20)  # Create a font object for rendering text
 text_surface=font.render('hi niche',True,'white')  # Render the text "text" in red color
+
+# explosion_frames= [pygame.image.load(join("images", f'explosion{i}.png')).convert_alpha() for i in range(1, 6)]  # Load explosion frames
+
 #sprites 
 all_sprites=pygame.sprite.Group() # Create a group to hold all sprites
 meteor_sprites=pygame.sprite.Group() # Create a group to hold meteor sprites
 laser_sprites=pygame.sprite.Group() # Create a group to hold laser sprites
-for i in range(20):  # Create 20 star instances
-    star(all_sprites, star_surf) 
+for i in range(21):  # Create 21 star instances
+    star(all_sprites, star_surf)
+     
 player=player(all_sprites) 
 
 
